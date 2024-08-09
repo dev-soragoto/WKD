@@ -1,0 +1,42 @@
+name: "Update"
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          show-progress: false
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "$GITHUB_ACTOR"
+          git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com"
+          git show -s
+
+      - name: Update OpenPGP
+        run: |
+          make
+
+      - name: Commit change
+        continue-on-error: true
+        run: |
+          set +e
+
+          git add .
+          git status
+          git commit -m "openpgp: update at $(date +'%Y-%m-%dT%H:%M:%S')"
+          git push
